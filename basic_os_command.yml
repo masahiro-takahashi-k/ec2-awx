@@ -1,7 +1,6 @@
 #OSコマンド実行
 - name: os command
-  vars_files: group_vars/all.yml
-  hosts: "{{ ssh_host }}"
+  hosts: all
   become: yes
   become_user: root
   roles:
