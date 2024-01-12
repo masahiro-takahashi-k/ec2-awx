@@ -1,0 +1,8 @@
+#ec2内にwebサーバーを立ち上げるロール
+- name: create web server
+  vars_files: group_vars/all.yml
+  hosts: "{{ ssh_host }}"
+  become: yes
+  become_user: root
+  roles:
+    - web_server

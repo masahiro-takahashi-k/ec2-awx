@@ -1,0 +1,44 @@
+# # webserver構築
+
+# - name: LAMPとPHP7.2のインストール
+#  ansible.builtin.shell: amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
+
+- name: ApacheとMariaDBインストール
+  ansible.builtin.yum: 
+    name: 
+      - httpd
+      - python3
+      - python3-pip
+      # - mariadb-server
+      # - MySQL-python
+    state: latest
+
+- name: PyMySQLインストール
+  ansible.builtin.pip: 
+    name: PyMySQL
+
+- name: Apache起動
+  ansible.builtin.systemd:
+    name: httpd
+    state: started
+    enabled: yes
+
+- name: ec2-userをapacheグループに追加
+  ansible.builtin.user:
+    name: ec2-user
+    groups: apache
+    append: yes
+
+- name: /var/www配下のユーザーとグループを変更する。
+  ansible.builtin.file:
+    path: /var/www
+    owner: ec2-user
+    group: apache
+    recurse: yes
+
+- name: /var/wwwとその配下のディレクトリの権限変更
+  ansible.builtin.file:
+    path: /var/www/
+    state: directory
+    recurse: yes
+    mode: '2755'

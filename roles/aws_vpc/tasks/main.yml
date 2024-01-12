@@ -1,0 +1,42 @@
+- name: EC2インスタンスの生成
+  amazon.aws.ec2_instance:
+    name: "{{ ec2_name }}"        # インスタンスの名前を指定
+    key_name: "{{ keypair_name }}"  # インスタンスにログインするための認証鍵を指定
+    instance_type: "{{ instance_type }}"         # インスタンスタイプを指定
+    image_id: "{{ image }}"
+    region: "{{ region }}"          # 東京リージョンを指定
+    vpc_subnet_id: "{{ subnet_id }}"   # サブネットを指定（ここは適宜変える）
+    security_group: "{{ secgrp_name }}"          # セキュリティグループ名を指定（ここは適宜変える）
+    network:
+      assign_public_ip: yes
+    state: started
+    wait: yes 
+  register: ec2_info
+
+# ec2ステータスチェック(上記ec2作成でもステータスチェックオプションを入れているが念のためこちらでもステータスチェック)
+- name: ec2がstartedになるまで待機
+  ansible.builtin.shell: aws ec2 describe-instances --instance-ids "{{ ec2_info.instance_ids[0] }}" --query "Reservations[].Instances[].State.Name | [0]" | tr -d "\""
+  register: state
+  until: state.stdout == "running"
+  retries: 12
+  delay: 10
+
+#スタックにec2のidを入力。スタックに別の値が書き込まれている場合は書き換える
+- name: スタックにec2idを追加
+  ansible.builtin.lineinfile:
+    path: ./delete_aws/roles/delete_aws/vars/main.yml
+    regexp: '^ec2_id'
+    line: "{{ 'ec2_id: '+ec2_info.instance_ids[0] }}"
+
+#ssh_configファイルにec2情報を書き込み
+- name: ssh_configに書き込み
+  ansible.builtin.lineinfile:
+    dest: ./ssh_config
+    line: "{{ item }}"
+  with_items:
+    - "{{ 'Host '+ssh_host }}"
+    - "{{ '  HostName '+ec2_info.instances[0].network_interfaces[0].association.public_ip }}"
+    - "{{ '  User '+ec2_user_name }}"
+    - "{{ '  IdentityFile ./'+keypair_name+'.pem' }}"
+    # - "{{ '  IdentityFile ~/.ssh/'+keypair_name+'.pem' }}"
+

@@ -1,0 +1,26 @@
+# # OSコマンド実行
+
+- name: Shell - lsコマンド
+  shell: ls -l /
+  register: info
+- name: ls確認
+  debug:
+    msg: "{{ info.stdout }}"
+
+- name: Shell - hostnameコマンド
+  shell: hostname
+  register: info
+- name: hostname確認
+  debug:
+    msg: "{{ info.stdout }}"
+
+- name: Shell - touchコマンド
+  file:
+    path: ~/test.txt
+    state: touch
+- name: Shell - ls -l ~/test.txt
+  shell: ls -l ~/test.txt
+  register: info
+- name: ls確認
+  debug:
+    msg: "{{ info.stdout }}"
